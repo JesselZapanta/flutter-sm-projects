@@ -5,9 +5,33 @@ class Shop {
 
   final List<Product> _shop = [
     Product(
-      name: 'shabu',
+      name: 'Product 1',
       price: 150,
-      description: 'maka adik',
+      description: 'This is a product description',
+      // imagePath: imagePath,
+    ),
+    Product(
+      name: 'Product 2',
+      price: 150,
+      description: 'This is a product description',
+      // imagePath: imagePath,
+    ),
+    Product(
+      name: 'Product 3',
+      price: 150,
+      description: 'This is a product description',
+      // imagePath: imagePath,
+    ),
+    Product(
+      name: 'Product 4',
+      price: 150,
+      description: 'This is a product description',
+      // imagePath: imagePath,
+    ),
+    Product(
+      name: 'Product 5',
+      price: 150,
+      description: 'This is a product description',
       // imagePath: imagePath,
     ),
   ];
