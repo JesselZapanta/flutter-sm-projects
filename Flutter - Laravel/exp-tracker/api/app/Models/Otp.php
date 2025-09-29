@@ -13,6 +13,7 @@ class Otp extends Model
         'type',
         'code',
         'status',
+        'expires_at',
     ];
 
     public function user()

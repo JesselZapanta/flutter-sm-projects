@@ -9,6 +9,7 @@ use App\Services\AuthServices;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rules;
 
 class AuthController extends Controller
 {
@@ -25,13 +26,16 @@ class AuthController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
-            'password' => 'required|confirmed|min:6',
+            'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
         $data['uuid'] = Str::uuid();
 
         //store
         $user = User::create($data);
+
+        //send verification code
+        $this->authService->otp($user);
 
         //token
         $token = $user->createToken('auth')->plainTextToken;
@@ -78,15 +82,67 @@ class AuthController extends Controller
     {
         //get the user
         $user = Auth::user();
-
         //generate OTP
-        $otp = $this->authService->otp($user);
+        $this->authService->otp($user);
         // return
         return response()->json([
-            'message' => 'Mao ni ang OTOP',
+            'message' => __('app.otp_sent_success'),
+        ], 200);
+    }
+
+    public function verify(Request $request)
+    {
+        //validate the request
+        $request->validate([
+            'otp' => 'required|numeric'
+        ]);
+
+        // //get the user
+        $user = Auth::user();
+
+        // verify api
+        $this->authService->verify($user, $request);
+
+        // return
+        return response()->json([
+            'message' => __('app.otp_verify_success'),
             'results' => [
                 'user' => new UserResource($user),
             ]
+        ], 200);
+    }
+
+    public function resetOtp(Request $request)
+    {
+        //validate the request 
+        $request->validate([
+            'email' => 'required|email|max:255|exists:users,email',
+        ]);
+
+        $user = $this->authService->getUserByEmail($request->email);    
+
+        $this->authService->otp($user, 'password-reset');
+
+        return response()->json([
+            'message' => __('app.otp_sent_success'),
+        ], 200);
+    }
+
+    public function resetPassword(Request $request)
+    {
+        //validate the request 
+        $request->validate([
+            'email' => 'required|email|max:255|exists:users,email',
+            'otp' => 'required|numeric',
+            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+        ]);
+
+        $user = $this->authService->getUserByEmail($request->email);    
+
+        $this->authService->resetPassword($user, $request);
+
+        return response()->json([
+            'message' => __('app.password_reset_verify_success'),
         ], 200);
     }
 }

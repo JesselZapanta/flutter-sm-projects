@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('type');
             $table->string('code');
             $table->tinyInteger('status');
+            $table->timestamp('expires_at')->nullable();
             $table->timestamps();
             $table->softDeletes();
         });

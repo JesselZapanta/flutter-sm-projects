@@ -2,6 +2,8 @@
 
 namespace App\Mail;
 
+use App\Models\Otp;
+use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
@@ -13,12 +15,16 @@ class OtpMail extends Mailable
 {
     use Queueable, SerializesModels;
 
+    public User $user;
+    public Otp $otp;
+
     /**
      * Create a new message instance.
      */
-    public function __construct()
+    public function __construct(User $user, Otp $otp)
     {
-        //
+        $this->user = $user;
+        $this->otp = $otp;
     }
 
     /**
@@ -27,7 +33,7 @@ class OtpMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Otp Mail',
+            subject: __('app.otp_mail_subject')
         );
     }
 
