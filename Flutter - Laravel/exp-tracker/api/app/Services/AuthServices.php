@@ -13,14 +13,37 @@ class AuthServices
 {
     public function otp(User $user, string $type = 'verification')
     {
-        //check for span and throttle
+        //check for spam and throttle
+        $latestOtp = Otp::where([
+            'user_id' => $user->id,
+            'type' => $type,
+            'status' => 1,
+        ])
+        ->latest()
+        ->first();
+        
+        if($latestOtp && $latestOtp->created_at->diffInSeconds(Carbon::now()) < 60){
+            abort(429, 'Too many requests. Please wait before requesting another OTP.');
+        }
+
+        //update the expired otp for this user + type
+        Otp::where('user_id', $user->id)
+            ->where('type', $type)
+            ->where('status', 1)
+            ->update([
+                'status'     => 0, 
+                'updated_at' => now(),
+            ]);
+
+        //generate random
         $code = random_int(100000, 999999);
 
         $otp = Otp::create([
             'user_id' => $user->id,
             'type' => $type,
             'code' => $code,
-            'status' => 1
+            'status' => 1,
+            'expires_at' => Carbon::now()->addMinutes(5),
         ]);
 
         // send OTP to email
@@ -28,15 +51,18 @@ class AuthServices
 
         return $otp;
     }
+
     public function verify(User $user, object $request)
     {
         //check if the otp is in the otp model and the user_id is equal to user-id and the otp status is 1
-        $otp = Otp::where('user_id', $user->id)
-            ->where('code', $request->otp)
-            ->where('status', 1)
-            ->first();
-
-
+        $otp = Otp::where([
+            'user_id' => $user->id,
+            'code' => $request->otp,
+            'status' => 1,
+        ])
+        ->where('expires_at', '>=', Carbon::now())
+        ->first();
+        
         // return $otp;
         if(!$otp){
             abort(422, __('app.otp_invalid'));
